@@ -7,6 +7,15 @@ import model.layers as L
 import util.helper as helper
 
 
+class ReshapeLayer(K.layers.Layer):
+    def __init__(self, _output_shape, **kwargs):
+        super().__init__(**kwargs)
+        self._output_shape = _output_shape
+
+    def call(self, inputs):
+        return tf.reshape(inputs, self._output_shape)
+
+
 def singleLayerHead(feature_map, num_anchors_layer, num_class, last_channel):
     """ YOLO HEAD for one specific feature stage (after FPN) """
     assert isinstance(num_anchors_layer, int)
@@ -26,7 +35,7 @@ def singleLayerHead(feature_map, num_anchors_layer, num_class, last_channel):
     conv = L.convolution2D(conv, final_output_channels, \
             1, (1,1), "same", None, use_activation=False, use_bias=True, bn=False, \
             if_regularization=False)
-    conv = tf.reshape(conv, final_output_reshape)
+    conv = ReshapeLayer(final_output_reshape)(conv)
     return conv
 
 

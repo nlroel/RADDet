@@ -8,7 +8,7 @@ from sklearn import mixture
 ################ coordinates transformation ################
 def cartesianToPolar(x, y):
     """ Cartesian to Polar """
-    rho = np.sqrt(x**2 + y**2)
+    rho = np.sqrt(x*x + y*y)
     phi = np.arctan2(y, x)
     return(rho, phi)
 
@@ -159,6 +159,7 @@ def iou2d(box_xywh_1, box_xywh_2):
     union_area = box1_area + box2_area - intersection_area
     ### get iou
     iou = np.nan_to_num(intersection_area / (union_area + 1e-10))
+    # print(iou)
     return iou
 
 def iou3d(box_xyzwhd_1, box_xyzwhd_2, input_size):
@@ -192,6 +193,7 @@ def iou3d(box_xyzwhd_1, box_xyzwhd_2, input_size):
     union_area = box1_area + box2_area - intersection_area
     ### get iou
     iou = np.nan_to_num(intersection_area / (union_area + 1e-10))
+    # print(iou)
     return iou
  
 def giou3d(box_xyzwhd_1, box_xyzwhd_2):
@@ -225,6 +227,7 @@ def giou3d(box_xyzwhd_1, box_xyzwhd_2):
     enclose_area = enclose_section[:, 0] * enclose_section[:, 1] * enclose_section[:, 2]
     ### get giou
     giou = iou - np.nan_to_num((enclose_area - union_area) / (enclose_area + 1e-10))
+    # print(giou)
     return giou
   
 def tf_iou2d(box_xywh_1, box_xywh_2):
@@ -386,7 +389,7 @@ def nms(bboxes, iou_threshold, input_size, sigma=0.3, method='nms'):
                     iou_mask = iou > iou_threshold
                     weight[iou_mask] = 0.0
                 if method == 'soft-nms':
-                    weight = np.exp(-(1.0 * iou ** 2 / sigma))
+                    weight = np.exp(-(1.0 * iou * iou / sigma))
                 cls_bboxes[:, 6] = cls_bboxes[:, 6] * weight
                 score_mask = cls_bboxes[:, 6] > 0.
                 cls_bboxes = cls_bboxes[score_mask]
@@ -417,7 +420,7 @@ def nmsOverClass(bboxes, iou_threshold, input_size, sigma=0.3, method='nms'):
                 iou_mask = iou > iou_threshold
                 weight[iou_mask] = 0.0
             if method == 'soft-nms':
-                weight = np.exp(-(1.0 * iou ** 2 / sigma))
+                weight = np.exp(-(1.0 * iou * iou / sigma))
             bboxes[:, 6] = bboxes[:, 6] * weight
             score_mask = bboxes[:, 6] > 0.
             bboxes = bboxes[score_mask]
@@ -453,7 +456,7 @@ def nms2D(bboxes, iou_threshold, input_size, sigma=0.3, method='nms'):
                     iou_mask = iou > iou_threshold
                     weight[iou_mask] = 0.0
                 if method == 'soft-nms':
-                    weight = np.exp(-(1.0 * iou ** 2 / sigma))
+                    weight = np.exp(-(1.0 * iou * iou / sigma))
                 cls_bboxes[:, 4] = cls_bboxes[:, 4] * weight
                 score_mask = cls_bboxes[:, 4] > 0.
                 cls_bboxes = cls_bboxes[score_mask]
@@ -483,7 +486,7 @@ def nms2DOverClass(bboxes, iou_threshold, input_size, sigma=0.3, method='nms'):
                 iou_mask = iou > iou_threshold
                 weight[iou_mask] = 0.0
             if method == 'soft-nms':
-                weight = np.exp(-(1.0 * iou ** 2 / sigma))
+                weight = np.exp(-(1.0 * iou * iou / sigma))
             bboxes[:, 4] = bboxes[:, 4] * weight
             score_mask = bboxes[:, 4] > 0.
             bboxes = bboxes[score_mask]

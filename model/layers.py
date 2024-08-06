@@ -71,9 +71,9 @@ def convolution1D(input_tensor, filters, kernel_size, strides, padding, \
  
     if use_activation:
         if activation == "relu":
-            conv_output = tf.nn.relu(conv_output)
+            conv_output = reluActivation()(conv_output)
         elif activation  == "mish":
-            conv_output = mishActivation(conv_output)
+            conv_output = mishActivation()(conv_output)
         else:
             raise ValueError("Wrong input activation mode")
     return conv_output
@@ -118,9 +118,9 @@ def convolution2D(input_tensor, filters, kernel_size, strides, padding, \
     
     if use_activation:
         if activation == "relu":
-            conv_output = tf.nn.relu(conv_output)
+            conv_output = reluActivation()(conv_output)
         elif activation  == "mish":
-            conv_output = mishActivation(conv_output)
+            conv_output = mishActivation()(conv_output)
         else:
             raise ValueError("Wrong input activation mode")
     return conv_output
@@ -155,9 +155,9 @@ def convolution3D(input_tensor, filters, kernel_size, strides, padding, \
     
     if use_activation:
         if activation == "relu":
-            conv_output = tf.nn.relu(conv_output)
+            conv_output = reluActivation()(conv_output)
         elif activation  == "mish":
-            conv_output = mishActivation(conv_output)
+            conv_output = mishActivation()(conv_output)
         else:
             raise ValueError("Wrong input activation mode")
     return conv_output
@@ -335,9 +335,9 @@ def convolution2Don3D(input_tensor, filters, kernel_size, strides, padding, \
     if bn: conv_output = BatchNormalization()(conv_output)
     
     if activation == "relu":
-        conv_output = tf.nn.relu(conv_output)
+        conv_output = reluActivation()(conv_output)
     elif activation  == "mish":
-        conv_output = mishActivation(conv_output)
+        conv_output = mishActivation()(conv_output)
     else:
         raise ValueError("Wrong input activation mode")
     return conv_output
@@ -374,9 +374,9 @@ def convolution1Don3D(input_tensor, filters, kernel_size, strides, padding, \
     if bn: conv_output = BatchNormalization()(conv_output)
     
     if activation == "relu":
-        conv_output = tf.nn.relu(conv_output)
+        conv_output = reluActivation()(conv_output)
     elif activation  == "mish":
-        conv_output = mishActivation(conv_output)
+        conv_output = mishActivation()(conv_output)
     else:
         raise ValueError("Wrong input activation mode")
     return conv_output
@@ -411,9 +411,16 @@ def bilinearUpsample2Don3D(input_tensor):
     return undo_transpose
 
 
-def mishActivation(x):
+class mishActivation(K.layers.Layer):
     """ Mish Activation Function """
-    return x * tf.math.tanh(tf.math.softplus(x))
+    def call(self, x):
+        return x * tf.math.tanh(tf.math.softplus(x))
+    
+
+class reluActivation(K.layers.Layer):
+    """ Relu Activation Function """
+    def call(self, x):
+        return tf.nn.relu(x)
 
 
 class BatchNormalization(K.layers.BatchNormalization):
@@ -425,7 +432,8 @@ class BatchNormalization(K.layers.BatchNormalization):
     and `beta` will not be updated !
     """
     def call(self, x, training=False):
-        if not training:
-            training = tf.constant(False)
-        training = tf.logical_and(training, self.trainable)
+        if training is None:
+            training = True
+        else:
+            training = training and self.trainable
         return super().call(x, training)

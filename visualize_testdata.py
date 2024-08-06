@@ -4,8 +4,9 @@ import os
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import glob
 
-from glob import glob
+#from glob import glob
 from tqdm import tqdm
 
 import util.loader as loader
@@ -62,6 +63,7 @@ def process(RAD_filename, frame_id, config_data, config_radar, colors, \
 def main(canvas_draw=False):
     config = loader.readConfig()
     config_data = config["DATA"]
+
     config_radar = config["RADAR_CONFIGURATION"]
     colors = loader.randomColors(config_data["all_classes"])
     if not canvas_draw:
@@ -71,8 +73,12 @@ def main(canvas_draw=False):
         fig, axes = drawer.prepareFigure(4, figsize=(20, 8))
         interpolation = 1
 
-    all_RAD_files = glob(os.path.join(config_data["test_set_dir"], \
-                                        "RAD/*/*.npy"))
+    #all_RAD_files = glob(os.path.join(config_data["D:\huiwenXie_files\开源\毫米波目标检测\毫米波yolo\▲RADDet Range-Azimuth-Doppler based Radar Object Detection\RADDet-main\dataset\test"],\"RAD/*/*.npy"))
+    folder_path = 'D:/huiwenXie_files/开源/毫米波目标检测/毫米波yolo/▲RADDet Range-Azimuth-Doppler based Radar Object Detection/RADDet-main/dataset/test/RAD/'
+
+    # 使用glob获取文件夹中所有.npy文件的路径
+    all_RAD_files = glob.glob(os.path.join(folder_path, '*.npy'))
+    #print(all_RAD_files)
 
     for i in tqdm(range(len(all_RAD_files))):
         RAD_filename = all_RAD_files[i]

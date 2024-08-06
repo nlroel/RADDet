@@ -25,6 +25,7 @@ class RADDet(K.Model):
         self.yolohead_xyz_scales = config_model["yolohead_xyz_scales"]
         self.focal_loss_iou_threshold = config_train["focal_loss_iou_threshold"]
         self.model = self.buildModel()
+        self.loss = self.loss_func
 
     def buildModel(self,):
         """ attention: building the model at last few lines of this 
@@ -54,7 +55,7 @@ class RADDet(K.Model):
                 self.anchor_boxes, self.num_class, self.yolohead_xyz_scales[0])
         return pred_raw, pred
 
-    def loss(self, pred_raw, pred, gt, raw_boxes):
+    def loss_func(self, pred_raw, pred, gt, raw_boxes):
         box_loss, conf_loss, category_loss = loss_func.lossYolo(pred_raw, pred, gt, \
                             raw_boxes, self.input_size, self.focal_loss_iou_threshold)
         box_loss *= 1e-1

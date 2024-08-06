@@ -1,8 +1,9 @@
 # Title: RADDet
 # Authors: Ao Zhang, Erlik Nowruzi, Robert Laganiere
 import os
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"]="0"
+# os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
 import shutil
 import cv2
@@ -23,6 +24,12 @@ import util.helper as helper
 import util.drawer as drawer
 
 
+# 启用XLA
+# tf.config.optimizer.set_jit(False)
+# tf.config.run_functions_eagerly(True)
+
+
+
 def main():
     ### NOTE: GPU manipulation, you may can print this out if necessary ###
     gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -32,7 +39,7 @@ def main():
         logical_gpus = tf.config.experimental.list_logical_devices('GPU')
         print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
 
-    config = loader.readConfig()
+    config = loader.readConfig()#读config.json,训练集的
     config_data = config["DATA"]
     config_radar = config["RADAR_CONFIGURATION"]
     config_model = config["MODEL"]
@@ -41,15 +48,18 @@ def main():
     anchor_boxes = loader.readAnchorBoxes() # load anchor boxes with order
     num_classes = len(config_data["all_classes"])
 
+
     ### NOTE: using the yolo head shape out from model for data generator ###
     model = M.RADDet(config_model, config_data, config_train, anchor_boxes)
     model.build([None] + config_model["input_shape"])
-    model.summary()
+    model.summary()#输出模型结构信息
 
     ### NOTE: preparing data ###
     data_generator = DataGenerator(config_data, config_train, config_model, \
                                 model.features_shape, anchor_boxes)
+
     train_generator = data_generator.trainGenerator()
+    print(train_generator)
     validate_generator = data_generator.validateGenerator()
 
     ### NOTE: training settings ###
@@ -60,6 +70,8 @@ def main():
         os.makedirs(logdir)
     global_steps = tf.Variable(1, trainable=False, dtype=tf.int64)
     optimizer = K.optimizers.Adam(learning_rate=config_train["learningrate_init"])
+    # print(optimizer)
+    # tf.print(model.loss)
     writer = tf.summary.create_file_writer(logdir)
     ckpt = tf.train.Checkpoint(optimizer=optimizer, model=model, step=global_steps)
     log_specific_dir = os.path.join(logdir, "ckpt")
@@ -72,7 +84,7 @@ def main():
         global_steps.assign(ckpt.step.numpy())
 
     ### NOTE: define training step ###
-    @tf.function
+    @tf.function()
     def train_step(data, label):
         """ define train step for training """
         with tf.GradientTape() as tape:
@@ -84,7 +96,7 @@ def main():
             optimizer.apply_gradients(zip(gradients, model.trainable_variables))
             ### NOTE: writing summary data ###
             with writer.as_default():
-                tf.summary.scalar("lr", optimizer.lr, step=global_steps)
+                tf.summary.scalar("lr", optimizer.learning_rate, step=global_steps)
                 tf.summary.scalar("loss/total_loss", total_loss, step=global_steps)
                 tf.summary.scalar("loss/box_loss", box_loss, step=global_steps)
                 tf.summary.scalar("loss/conf_loss", conf_loss, step=global_steps)
@@ -159,7 +171,7 @@ def main():
         total_loss, box_loss, conf_loss, category_loss = train_step(data, label)
         tf.print("=======> train step: %4d, lr: %.6f, total_loss: %4.2f,  \
                 box_loss: %4.2f, conf_loss: %4.2f, category_loss: %4.2f" % \
-                (global_steps, optimizer.lr.numpy(), total_loss, box_loss, \
+                (global_steps, optimizer.learning_rate.numpy(), total_loss, box_loss, \
                 conf_loss, category_loss))
         ### NOTE: learning rate decay ###
         global_steps.assign_add(1)
@@ -169,13 +181,13 @@ def main():
                 lr = config_train["learningrate_startup"]
             else:
                 lr = config_train["learningrate_init"]
-            optimizer.lr.assign(lr)
+            optimizer.learning_rate.assign(lr)
         elif global_steps % config_train["learningrate_decay_gap"] == 0:
-            lr = optimizer.lr.numpy()
+            lr = optimizer.learning_rate.numpy()
             lr = config_train["learningrate_end"] + \
                     config_train["learningrate_decay"] * \
                     (lr - config_train["learningrate_end"])
-            optimizer.lr.assign(lr)
+            optimizer.learning_rate.assign(lr)
  
         ###---------------------------- VALIDATE SET -------------------------###
         if global_steps.numpy() >= config_train["validate_start_steps"] and \

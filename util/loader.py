@@ -11,7 +11,8 @@ from glob import glob
 
 def readConfig(config_file_name = "./config.json"):
     """ Read the configure file (json). """
-    with open(config_file_name) as json_file:
+   # with open(config_file_name) as json_file:
+    with open(config_file_name, 'r', encoding='utf-8') as json_file:
         config = json.load(json_file)
     return config
 

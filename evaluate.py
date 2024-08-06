@@ -70,6 +70,7 @@ def main():
     logdir = os.path.join(config_evaluate["log_dir"], \
                         "b_" + str(config_train["batch_size"]) + \
                         "lr_" + str(config_train["learningrate_init"]))
+    #print(logdir)
     if not os.path.exists(logdir):
         raise ValueError("RAD Boxes model not loaded, please check the ckpt path.")
     global_steps = tf.Variable(1, trainable=False, dtype=tf.int64)
@@ -368,7 +369,7 @@ def main():
 
 
     ### NOTE: plot the predictions on the entire dataset ###
-    # predictionPlots()
+    predictionPlots()
 
 
 if __name__ == "__main__":
